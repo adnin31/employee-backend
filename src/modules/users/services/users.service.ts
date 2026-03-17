@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository';
@@ -45,16 +45,43 @@ export class UsersService {
         return this.getProfile(userId);
     }
 
+    async listEmployees(params: { page: number; limit: number; search?: string }) {
+        const { page, limit, search } = params;
+        const skip = (page - 1) * limit;
+        const [data, total] = await this.userRepository.findAll({ skip, take: limit, search });
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
     async createEmployee(employeeData: any) {
+        const existingUser = await this.userRepository.findByEmail(employeeData.email);
+        if (existingUser) {
+            throw new ConflictException('Email already in use');
+        }
         employeeData.password = await bcrypt.hash(employeeData.password, 10);
         return this.userRepository.save(employeeData);
     }
 
     async updateEmployee(adminId: string, employeeId: string, updateData: any) {
+        const employee = await this.userRepository.findById(employeeId);
+        if (!employee) throw new NotFoundException('Employee not found');
         if (updateData.password) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         }
         await this.userRepository.update(employeeId, updateData);
         return this.getProfile(employeeId);
     }
+
+    async deleteEmployee(employeeId: string) {
+        const employee = await this.userRepository.findById(employeeId);
+        if (!employee) throw new NotFoundException('Employee not found');
+        await this.userRepository.delete(employeeId);
+        return { message: 'Employee deleted successfully' };
+    }
 }
+

@@ -14,7 +14,7 @@ import { LoggingModule } from './modules/logging/logging.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DATABASE_HOST || 'localhost',
-      port: parseInt(process.env.DATABASE_PORT) || 5432,
+      port: parseInt(process.env.DATABASE_PORT as string) || 5433,
       username: process.env.DATABASE_USER || 'root',
       password: process.env.DATABASE_PASSWORD || 'password',
       database: process.env.DATABASE_NAME || 'employee_db',

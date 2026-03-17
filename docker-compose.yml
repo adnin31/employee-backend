@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: employee_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -21,9 +21,16 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   api:
     build: .
+    labels:
+      - "dev.orbstack.domains=api.employee-backend.orb.local:7000"
     ports:
       - "7000:7000"
     environment:
@@ -34,8 +41,10 @@ services:
       DATABASE_NAME: employee_db
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   pgdata:
