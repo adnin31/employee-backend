@@ -1,98 +1,113 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Employee Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS REST API with PostgreSQL, RabbitMQ, and Docker.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## ✅ Prerequisites
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Make sure the following are installed before running the project:
 
-## Project setup
+| App | Version | Download |
+|-----|---------|----------|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest | Required to run containers |
+| [OrbStack](https://orbstack.dev/) *(recommended, macOS only)* | Latest | Faster Docker alternative with magic `.orb.local` HTTPS domains |
+| [Node.js](https://nodejs.org/) | v18+ | Only needed for local development without Docker |
+
+> **Note:** You only need either Docker Desktop **or** OrbStack — not both. OrbStack is recommended for macOS.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
 
 ```bash
-$ npm install
+git clone git@adnin-personal:adnin31/employee-backend.git
+cd employee-backend
 ```
 
-## Compile and run the project
+### 2. Set up environment variables
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+Edit `.env` if needed (defaults work out of the box with Docker):
+
+```env
+POSTGRES_USER=root
+POSTGRES_PASSWORD=rootpassword
+POSTGRES_DB=employee_db
+DATABASE_URL=postgres://root:rootpassword@db:5432/employee_db
+RABBITMQ_URL=amqp://rabbitmq:5672
+JWT_SECRET=supersecretjwt
+PORT=7000
+```
+
+### 3. Start all services
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker-compose up --build
 ```
 
-## Deployment
+This will start:
+- **PostgreSQL** — database on port `5432`
+- **RabbitMQ** — message broker on port `5672`
+- **NestJS API** — REST API on port `7000`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### 4. Seed the admin user
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Once the containers are running, create the default HRD admin account:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker exec employee-backend-db-1 psql -U root -d employee_db -c \
+  "INSERT INTO users (id, email, password, name, phone_number, position, role, created_at, updated_at)
+   VALUES (gen_random_uuid(), 'admin@company.com', '\$2b\$10\$2tH09EWQipiYAE8RR9G00.knY2s5JnkCY5aeqxv3xNRiWz7VwH1Me', 'Admin HR', '081234567890', 'HR Manager', 'HRD', NOW(), NOW())
+   ON CONFLICT DO NOTHING;"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Default credentials:**
+- Email: `admin@company.com`
+- Password: `admin123`
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🌐 Accessing the API
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Mode | URL |
+|------|-----|
+| Via OrbStack domain | `https://api.employee-backend.orb.local` |
+| Via localhost | `http://localhost:7000` |
 
-## Support
+Base path for all endpoints: `/api/v1`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 📋 Key Endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/users/login` | Login and get JWT token |
+| `GET` | `/api/v1/users/profile` | Get logged-in user profile |
+| `GET` | `/api/v1/users/admin/manage` | List all employees (HRD only) |
+| `POST` | `/api/v1/users/admin/manage` | Create employee (HRD only) |
+| `PATCH` | `/api/v1/users/admin/manage/:id` | Update employee (HRD only) |
+| `DELETE` | `/api/v1/users/admin/manage/:id` | Delete employee (HRD only) |
+| `POST` | `/api/v1/attendance/check-in` | Employee check-in |
+| `POST` | `/api/v1/attendance/check-out` | Employee check-out |
+| `GET` | `/api/v1/attendance/summary` | Attendance summary |
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🛑 Stopping the Services
+
+```bash
+docker-compose down
+```
+
+To also remove all data (database volumes):
+
+```bash
+docker-compose down -v
+```
